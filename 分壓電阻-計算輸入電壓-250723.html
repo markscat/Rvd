@@ -1,0 +1,210 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=big5">
+    <meta name="generator" content="PSPad editor, www.pspad.com">
+    <title>電阻分壓計算器 (含單位轉換)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        td {
+            padding: 10px;
+            vertical-align: top;
+            border: 1px solid #ddd;
+        }
+        h5 {
+            color: #333;
+        }
+        input[type="text"] {
+            width: 80px;
+        }
+        .output {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #0066cc;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .unit-selector {
+            margin: 5px 0;
+            padding: 3px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+    </style>
+    <script type='text/javascript'>
+        // 當前選擇的單位 (預設為KΩ)
+        let currentUnit = 'K';
+        
+        // 切換單位函數
+        function changeUnit(unit) {
+            currentUnit = unit;
+            updateUnitDisplays();
+            // 自動重新計算所有結果
+            recalculateAll();
+        }
+        
+        // 更新所有顯示的單位標籤
+        function updateUnitDisplays() {
+            const unitDisplays = document.querySelectorAll('.unit-display');
+            unitDisplays.forEach(display => {
+                display.textContent = currentUnit === 'Ω' ? 'Ω' : 
+                                    currentUnit === 'K' ? 'KΩ' : 'MΩ';
+            });
+        }
+        
+        // 根據選擇的單位轉換電阻值
+        function convertResistance(value) {
+            if (currentUnit === 'Ω') return value;
+            if (currentUnit === 'K') return value * 1000;
+            if (currentUnit === 'M') return value * 1000000;
+            return value * 1000; // 預設為KΩ
+        }
+        
+        // 統一計算函數 (已整合單位轉換)
+        function calculateVoltage(params) {
+            try {
+                const { inputVoltage, r1Id, r2Id, outputId, isInputMode } = params;
+                
+                // 取得輸入值並轉換為基本單位(Ω)
+                const r1 = convertResistance(Number(document.getElementById(r1Id).value) || 1);
+                const r2 = convertResistance(Number(document.getElementById(r2Id).value) || 1);
+                const inputValue = Number(document.getElementById(inputVoltage).value) || 0;
+                
+                // 計算結果
+                const result = isInputMode
+                    ? inputValue * (r1 + r2) / r2  // Vin模式公式
+                    : inputValue * r2 / (r1 + r2); // Vout模式公式
+                
+                document.getElementById(outputId).innerHTML = result.toFixed(2) + "V";
+            } catch (e) {
+                document.getElementById(outputId).innerHTML = "錯誤";
+            }
+        }
+        
+        // 滑動條數值顯示函數
+        function change_F(input, output) {
+            document.getElementById(output).innerHTML = document.getElementById(input).value;
+        }
+        
+        // 重新計算所有結果
+        function recalculateAll() {
+            // 狀況一計算
+            calculateVoltage({
+                inputVoltage: 'Vout',
+                r1Id: 'R1',
+                r2Id: 'R2',
+                outputId: 'Vin_result',
+                isInputMode: true
+            });
+            
+            // 狀況二計算
+            calculateVoltage({
+                inputVoltage: 'Vout_2',
+                r1Id: 'R1_2',
+                r2Id: 'R2_2',
+                outputId: 'Vin_result2',
+                isInputMode: true
+            });
+            
+            // 輸出電壓計算
+            calculateVoltage({
+                inputVoltage: 'Vin_3',
+                r1Id: 'R1_3',
+                r2Id: 'R2_3',
+                outputId: 'Vout_result',
+                isInputMode: false
+            });
+        }
+    </script>
+</head>
+<body>
+    <div id='Script area'></div>
+
+    <H5>分壓電阻輸入和輸出計算 (含單位轉換)</H5>
+    
+    <div class="unit-selector">
+        電阻單位: 
+        <button onclick="changeUnit('Ω')">Ω (歐姆)</button>
+        <button onclick="changeUnit('K')">KΩ (千歐姆)</button>
+        <button onclick="changeUnit('M')">MΩ (百萬歐姆)</button>
+        <span>當前單位: <span id="currentUnitDisplay">KΩ</span></span>
+    </div>
+
+    <img src="%E9%9B%BB%E9%98%BB%E5%88%86%E5%A3%93%E9%9B%BB%E8%B7%AF.png" alt="電阻分壓電路" style="width: 298px; height: 342px;"><br><br>
+
+    <table style="width: 800px" border="1">
+        <tbody>
+            <tr>
+                <td style="width:50%;">
+                    <div class="section">
+                        原理：就只是很單純的分壓往回推而已。<br>
+                        公式：<br>
+                        <img src="Vin.jpg" alt="Vin公式"><br>
+                        狀況一：R1和R2可以在1K到1000K滑動<br>
+                        <li>單位轉換會自動處理計算</li>
+                        <li>這個方法在決定電阻的值的時候很好用。</li>
+                        <br>
+                        Vout = <input id="Vout" type="text" onchange="recalculateAll()">V<br>
+                        <input id="R1" type="range" min="1" max="1000" value="5" step="1" 
+                               oninput="change_F('R1','R1_out'); recalculateAll()" 
+                               onchange="change_F('R1','R1_out'); recalculateAll()">
+                        <br>
+                        R1 = <output id="R1_out">5</output><span class="unit-display">KΩ</span>
+                        <br><br>
+                        <input id="R2" type="range" min="1" max="1000" value="5" step="1" 
+                               oninput="change_F('R2','R2_out'); recalculateAll()" 
+                               onchange="change_F('R2','R2_out'); recalculateAll()">
+                        <br>
+                        R2 = <output id="R2_out">5</output><span class="unit-display">KΩ</span>
+                        <br>
+                        <div class="output">Vin = <output id="Vin_result">0.00V</output></div>
+                    </div>
+
+                    ＜＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＞
+
+                    <div class="section">
+                        狀況二：直接輸入R1和R2的值<br>
+                        <li>輸入值會根據選擇的單位自動轉換</li>
+                        <li>不管是驗證上面的數據，或是做測試都很好用。</li>
+                        <br>
+                        Vout = <input id="Vout_2" type="text" onchange="recalculateAll()">V<br>
+                        R1 = <input id="R1_2" type="text" onchange="recalculateAll()"><span class="unit-display">KΩ</span><br>
+                        R2 = <input id="R2_2" type="text" onchange="recalculateAll()"><span class="unit-display">KΩ</span><br>
+                        <br>
+                        <div class="output">Vin = <output id="Vin_result2">0.00V</output></div>
+                    </div>
+                </td>
+
+                <td rowspan="2" style="width: 50%;">
+                    <div class="section">
+                        計算電阻分壓<br>
+                        <li>輸入值會根據選擇的單位自動轉換</li>
+                        <li>不管是驗證上面的數據，或是做測試都很好用。</li>
+                        <br>
+                        Vin = <input id="Vin_3" type="text" onchange="recalculateAll()">V<br>
+                        R1 = <input id="R1_3" type="text" onchange="recalculateAll()"><span class="unit-display">KΩ</span><br>
+                        R2 = <input id="R2_3" type="text" onchange="recalculateAll()"><span class="unit-display">KΩ</span><br>
+                        <br>
+                        <div class="output">Vout = <output id="Vout_result">0.00V</output></div>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <script>
+        // 初始化單位顯示
+        updateUnitDisplays();
+        // 設置當前單位顯示
+        document.getElementById('currentUnitDisplay').textContent = 'KΩ';
+    </script>
+</body>
+</html>
